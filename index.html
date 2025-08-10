@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Flappy Heart ❤️</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    body {
+        margin: 0;
+        background: linear-gradient(#ffdee9, #b5fffc);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: 'Comic Sans MS', cursive;
+        overflow: hidden;
+    }
+    #gameCanvas {
+        background: linear-gradient(#ffe0f0, #b5fffc);
+        border: 3px solid #ff2e63;
+        border-radius: 10px;
+        display: block;
+    }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let baseWidth = 400;  // original width for scaling
+let baseHeight = 600; // original height for scaling
+
+let heart, pipes, score, gameOver;
+let gravity = 0.5, lift = -8, pipeGap = 150, pipeSpeed = 2;
+
+function resizeCanvas() {
+    // Maintain aspect ratio
+    let scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / baseHeight);
+    canvas.width = baseWidth * scale;
+    canvas.height = baseHeight * scale;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+function resetGame() {
+    heart = { x: 50, y: 150, width: 30, height: 30, gravity: gravity, lift: lift, velocity: 0 };
+    pipes = [];
+    score = 0;
+    gameOver = false;
+}
+
+function drawHeart() {
+    ctx.font = `${30 * scaleFactor()}px Arial`;
+    ctx.fillText("❤️", heart.x * scaleFactor(), heart.y * scaleFactor() + 25 * scaleFactor());
+}
+
+function drawPipes() {
+    ctx.font = `${30 * scaleFactor()}px Arial`;
+    pipes.forEach(pipe => {
+        for (let y = 0; y < pipe.top; y += 30) {
+            ctx.fillText("🎂", pipe.x * scaleFactor(), y * scaleFactor());
+        }
+        for (let y = pipe.top + pipe.gap; y < baseHeight; y += 30) {
+            ctx.fillText("🎂", pipe.x * scaleFactor(), y * scaleFactor());
+        }
+    });
+}
+
+function drawScore() {
+    ctx.fillStyle = "#ff2e63";
+    ctx.font = `${20 * scaleFactor()}px Comic Sans MS`;
+    ctx.fillText("Score: " + score, 10 * scaleFactor(), 30 * scaleFactor());
+}
+
+function update() {
+    if (gameOver) return;
+
+    heart.velocity += heart.gravity;
+    heart.y += heart.velocity;
+
+    if (heart.y + heart.height > baseHeight || heart.y < 0) {
+        endGame();
+    }
+
+    pipes.forEach(pipe => {
+        pipe.x -= pipeSpeed;
+        if (pipe.x + 30 < 0) {
+            pipes.shift();
+            score++;
+        }
+
+        if (
+            heart.x < pipe.x + 30 &&
+            heart.x + heart.width > pipe.x &&
+            (heart.y < pipe.top || heart.y + heart.height > pipe.top + pipe.gap)
+        ) {
+            endGame();
+        }
+    });
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawHeart();
+    drawPipes();
+    drawScore();
+
+    if (gameOver) {
+        ctx.fillStyle = "#ff2e63";
+        ctx.font = `${24 * scaleFactor()}px Comic Sans MS`;
+        ctx.fillText("But you’ll always win my heart 😘", 20 * scaleFactor(), baseHeight / 2 * scaleFactor());
+    }
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+function flap() {
+    if (!gameOver) {
+        heart.velocity = heart.lift;
+    } else {
+        resetGame();
+    }
+}
+
+function spawnPipe() {
+    let top = Math.floor(Math.random() * (baseHeight / 2)) + 50;
+    pipes.push({ x: baseWidth, top: top, gap: pipeGap });
+}
+
+function endGame() {
+    gameOver = true;
+}
+
+function scaleFactor() {
+    return canvas.width / baseWidth;
+}
+
+// Controls
+document.addEventListener("keydown", e => {
+    if (e.code === "Space") flap();
+});
+document.addEventListener("click", flap);
+document.addEventListener("touchstart", flap);
+
+// Start game
+resetGame();
+setInterval(spawnPipe, 2000);
+gameLoop();
+</script>
+
+</body>
+</html>
